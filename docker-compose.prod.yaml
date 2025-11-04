@@ -1,0 +1,152 @@
+version: '3.8'
+
+# Production Docker Compose for Postiz
+# External IP Access: http://134.199.234.106:5000
+
+services:
+  # Postiz Backend API
+  postiz-backend:
+    image: postiz-app:latest
+    container_name: postiz-backend
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postiz:postiz@localhost:5432/postiz-db-prod}
+      - REDIS_URL=${REDIS_URL:-redis://localhost:6379}
+      - BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL:-http://localhost:3000}
+      - MAIN_URL=${MAIN_URL:-http://134.199.234.106:5000}
+      - FRONTEND_URL=${FRONTEND_URL:-http://134.199.234.106:5000}
+      - NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL:-http://134.199.234.106:5000/api}
+      - NEXT_PUBLIC_FRONTEND_URL=${NEXT_PUBLIC_FRONTEND_URL:-http://134.199.234.106:5000}
+      - JWT_SECRET=${JWT_SECRET}
+      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
+      - IS_GENERAL=${IS_GENERAL:-true}
+      - NODE_ENV=production
+      - UPLOAD_DIRECTORY=/uploads
+      - STORAGE_PROVIDER=${STORAGE_PROVIDER:-local}
+      - FACEBOOK_APP_ID=${FACEBOOK_APP_ID}
+      - FACEBOOK_APP_SECRET=${FACEBOOK_APP_SECRET}
+      - INSTAGRAM_CLIENT_ID=${INSTAGRAM_CLIENT_ID}
+      - INSTAGRAM_CLIENT_SECRET=${INSTAGRAM_CLIENT_SECRET}
+    volumes:
+      - uploads:/uploads
+      - ./logs:/app/logs
+    command: sh -c "pnpm run prisma-db-push && pnpm run start:prod:backend"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Postiz Frontend (Next.js)
+  postiz-frontend:
+    image: postiz-app:latest
+    container_name: postiz-frontend
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      postiz-backend:
+        condition: service_started
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    environment:
+      - NODE_ENV=production
+      - MAIN_URL=${MAIN_URL:-http://134.199.234.106:5000}
+      - FRONTEND_URL=${FRONTEND_URL:-http://134.199.234.106:5000}
+      - NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL:-http://134.199.234.106:5000/api}
+      - NEXT_PUBLIC_FRONTEND_URL=${NEXT_PUBLIC_FRONTEND_URL:-http://134.199.234.106:5000}
+    volumes:
+      - ./logs:/app/logs
+    command: pnpm run start:prod:frontend
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4200"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Postiz Workers (BullMQ job processing)
+  postiz-workers:
+    image: postiz-app:latest
+    container_name: postiz-workers
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      postiz-backend:
+        condition: service_started
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postiz:postiz@localhost:5432/postiz-db-prod}
+      - REDIS_URL=${REDIS_URL:-redis://localhost:6379}
+      - BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL:-http://localhost:3000}
+      - MAIN_URL=${MAIN_URL:-http://134.199.234.106:5000}
+      - FRONTEND_URL=${FRONTEND_URL:-http://134.199.234.106:5000}
+      - JWT_SECRET=${JWT_SECRET}
+      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
+      - IS_GENERAL=${IS_GENERAL:-true}
+      - FACEBOOK_APP_ID=${FACEBOOK_APP_ID}
+      - FACEBOOK_APP_SECRET=${FACEBOOK_APP_SECRET}
+      - INSTAGRAM_CLIENT_ID=${INSTAGRAM_CLIENT_ID}
+      - INSTAGRAM_CLIENT_SECRET=${INSTAGRAM_CLIENT_SECRET}
+    volumes:
+      - uploads:/uploads
+      - ./logs:/app/logs
+    command: pnpm run start:prod:workers
+
+  # Postiz Cron (Scheduled tasks)
+  postiz-cron:
+    image: postiz-app:latest
+    container_name: postiz-cron
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      postiz-backend:
+        condition: service_started
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postiz:postiz@localhost:5432/postiz-db-prod}
+      - REDIS_URL=${REDIS_URL:-redis://localhost:6379}
+      - BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL:-http://localhost:3000}
+      - MAIN_URL=${MAIN_URL:-http://134.199.234.106:5000}
+      - FRONTEND_URL=${FRONTEND_URL:-http://134.199.234.106:5000}
+      - JWT_SECRET=${JWT_SECRET}
+      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
+      - IS_GENERAL=${IS_GENERAL:-true}
+      - FACEBOOK_APP_ID=${FACEBOOK_APP_ID}
+      - FACEBOOK_APP_SECRET=${FACEBOOK_APP_SECRET}
+      - INSTAGRAM_CLIENT_ID=${INSTAGRAM_CLIENT_ID}
+      - INSTAGRAM_CLIENT_SECRET=${INSTAGRAM_CLIENT_SECRET}
+    volumes:
+      - uploads:/uploads
+      - ./logs:/app/logs
+    command: pnpm run start:prod:cron
+
+  # Nginx Reverse Proxy
+  postiz-nginx:
+    image: nginx:alpine
+    container_name: postiz-nginx
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      - postiz-backend
+      - postiz-frontend
+    volumes:
+      - ./var/docker/nginx-alpine.conf:/etc/nginx/nginx.conf:ro
+      - uploads:/uploads:ro
+      - ./logs/nginx:/var/log/nginx
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  uploads:
+    driver: local

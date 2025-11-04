@@ -5,6 +5,9 @@ dist
 tmp
 /out-tsc
 .env
+.env.production
+.env.local
+.env.*.local
 # dependencies
 node_modules
 

@@ -19,6 +19,7 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo",
     "strictNullChecks": false,
     "noImplicitAny": true,
     "strictBindCallApply": false,

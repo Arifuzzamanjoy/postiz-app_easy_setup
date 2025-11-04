@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "dev": "dotenv -e ../../.env -- nest start --watch --entryFile=./apps/cron/src/main",
-    "build": "cross-env NODE_ENV=production nest build",
+    "dev": "cross-env NODE_OPTIONS='--max-old-space-size=1024' dotenv -e ../../.env -- nest start --watch --entryFile=./apps/cron/src/main",
+    "build": "cross-env NODE_ENV=production NODE_OPTIONS='--max-old-space-size=2048' nest build",
     "start": "dotenv -e ../../.env -- node --experimental-require-module ./dist/apps/cron/src/main.js",
     "pm2": "pm2 start pnpm --name cron -- start"
   },
