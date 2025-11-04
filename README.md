@@ -29,6 +29,83 @@
 
 <div class="flex" align="center">
   <br />
+  <a href="#-quick-deployment">Quick Deployment</a> •
+  <a href="PRODUCTION_DEPLOYMENT.md">Production Setup</a> •
+  <a href="CODEBASE_STRUCTURE.md">Architecture</a>
+  <br /><br />
+</div>
+
+---
+
+## 🚀 Quick Deployment
+
+Deploy Postiz on any Ubuntu server in **under 5 minutes**:
+
+```bash
+# 1. Clone this repository
+git clone https://github.com/Arifuzzamanjoy/postiz-app_easy_setup.git
+cd postiz-app_easy_setup
+
+# 2. Copy and configure environment
+cp .env.example .env
+nano .env  # Update with your settings (SERVER_IP, credentials, etc.)
+
+# 3. Deploy with one command
+chmod +x deploy.sh
+./deploy.sh
+
+# 4. Access Postiz
+# Open: http://YOUR_SERVER_IP:5000
+```
+
+### 📋 Requirements
+- **Ubuntu 22.04+** or similar Linux distribution
+- **Docker** and **Docker Compose** installed
+- **Node.js 20+** and **pnpm 8+**
+- **2GB RAM** minimum (4GB recommended)
+- **Port 5000** open in firewall
+
+### 📚 Documentation
+- **[Production Deployment Guide](PRODUCTION_DEPLOYMENT.md)** - Complete setup instructions
+- **[Codebase Structure](CODEBASE_STRUCTURE.md)** - Architecture and code organization
+- **[Facebook/Instagram OAuth Setup](facebook-oauth-setup.md)** - Social media integration
+
+### ⚙️ Configuration
+Edit `.env` file with your settings:
+```bash
+# Your server's public IP or domain
+FRONTEND_URL="http://YOUR_SERVER_IP:5000"
+
+# Database (uses included PostgreSQL)
+DATABASE_URL="postgresql://postiz-local:postiz-local-pwd@localhost:5432/postiz-db-local"
+
+# For HTTP deployments (required for testing without SSL)
+NOT_SECURED=true
+
+# Facebook/Instagram OAuth (optional)
+FACEBOOK_APP_ID="your-facebook-app-id"
+FACEBOOK_APP_SECRET="your-facebook-app-secret"
+```
+
+### 🔧 Deployment Scripts
+- `deploy.sh` - Full deployment (build + start)
+- `build-production.sh` - Build Docker images only
+- `start-production.sh` - Start all services
+- `stop-production.sh` - Stop all services
+- `diagnose-oauth.sh` - Test OAuth configuration
+
+### ✅ Verified Working Configuration
+- ✅ External IP access
+- ✅ HTTP mode (no SSL required for testing)
+- ✅ Facebook/Instagram OAuth integration
+- ✅ Database migrations automated
+- ✅ Redis queue processing
+- ✅ Background workers and cron jobs
+
+---
+
+<div class="flex" align="center">
+  <br />
   <img alt="Instagram" src="https://postiz.com/svgs/socials/Instagram.svg" width="32">
   <img alt="Youtube" src="https://postiz.com/svgs/socials/Youtube.svg" width="32">
   <img alt="Dribbble" src="https://postiz.com/svgs/socials/Dribbble.svg" width="32">
